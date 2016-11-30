@@ -29,9 +29,9 @@ from __future__ import absolute_import, print_function
 import pkg_resources
 from flask_admin import Admin, AdminIndexView
 from invenio_db import db
+from werkzeug import import_string
 
 from . import config
-from .permissions import admin_permission_factory
 from .views import protected_adminview_factory
 
 
@@ -103,7 +103,7 @@ class InvenioAdmin(object):
     def init_app(self,
                  app,
                  entry_point_group='invenio_admin.views',
-                 permission_factory=admin_permission_factory,
+                 permission_factory=None,
                  view_class_factory=protected_adminview_factory,
                  index_view_class=AdminIndexView,
                  **kwargs):
@@ -119,6 +119,10 @@ class InvenioAdmin(object):
             (Default: :class:`flask_admin.base.AdminIndexView`)
         """
         self.init_config(app)
+
+        default_permission_factory = app.config['ADMIN_PERMISSION_FACTORY']
+        permission_factory = permission_factory or \
+            import_string(default_permission_factory)
 
         # Create administration app.
         admin = Admin(

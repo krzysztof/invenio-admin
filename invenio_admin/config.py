@@ -32,3 +32,6 @@ panel will be redirected to this endpoint."""
 
 ADMIN_LOGOUT_ENDPOINT = 'security.logout'
 """Endpoint name of logout view."""
+
+ADMIN_PERMISSION_FACTORY = 'invenio_admin.permissions.admin_permission_factory'
+"""Permission factory for the admin views."""

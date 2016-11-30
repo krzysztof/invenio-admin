@@ -29,15 +29,17 @@ and customizing the administration panel for model views and user-defined
 admin pages. The module uses standard Flask-Admin features and assumes very
 little about other components installed within given Invenio instance.
 
-Initialization
---------------
-This section serves as an example on basic usage of the Invenio-Admin.
-Create a basic Flask application.
+Quick start
+-----------
+This section presents a minimal working example of the Invenio-Admin usage.
+
+First, let us create a new Flask application:
 
 >>> from flask import Flask
 >>> app = Flask('DinerApp')
 
-Invenio-Admin requires Invenio-DB to instantiate the admin model views:
+and load the Invenio-DB (required for model views)
+and Invenio-Admin extensions:
 
 >>> from invenio_db import InvenioDB
 >>> from invenio_admin import InvenioAdmin
@@ -74,49 +76,29 @@ Finally, initialize the database and run the development server:
 ...     db.create_all()
 >>> app.run() # doctest: +SKIP
 
-
 You should now be able to access the admin panel `http://localhost:5000/admin
 <http://localhost:5000/admin>`_.
 
-Built-In security and authentication check
-------------------------------------------
-Although Invenio-Admin does not directly depend on Invenio-Access or
-Invenio-Accounts module, it does protect the admin views with Flask-Login and
-Flask-Principal. In order to login to a Invenio-Admin panel the user
-needs to be authenticated using Flask-Login and have a Flask-Principal
-identity which provides the ``ActionNeed('admin-access')``.
+Adding admin views from Invenio module
+--------------------------------------
+In real-world scenarios you will most likley want to add an admin view for
+your custom models from within the Invenio module or an Invenio overlay
+application. Instead of registering it directly on the application as in the
+example above, you can use entry points to register those automatically.
 
-AdminView discovery through entry points
-----------------------------------------
-The default way of adding admin views to the admin panel is though the
-entry point discovery. To do that, a newly created module has to register an
-entry point under the group ``invenio_admin.views`` inside its ``setup.py``
-as follows:
-
-.. code-block:: python
-
-    # setup.py
-    setup(
-        entry_points={
-            'invenio_admin.views': [
-                'invenio_diner_snack = invenio_diner.admin.snack_adminview',
-                'invenio_diner_breakfast = '
-                'invenio_diner.admin.breakfast_adminview',
-            ],
-        },
-    )
-
-The example above will add two model views to Invenio-Admin instance, namely
-the description of ``Snack`` and ``Breakfast`` models.
-Definitions of admin views are usually defined in a top-level ``admin.py``
-file insie the invenio module, e.g.:
+Defining models and model views
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Let us start with defining the ``admin.py`` file inside your module or overlay,
+which will contain all admin-related classes and functions.
+For example, assuming a ``Invenio-Diner`` module, the file could reside in:
 
 ``invenio-diner/invenio_diner/admin.py``.
 
-An example content of the ``admin.py`` is as follows:
+An the content of which would look as follows:
 
 .. code-block:: python
 
+    # invenio-diner/invenio_diner/admin.py
     from flask_admin.contrib.sqla import ModelView
     from .models import Snack, Breakfast
 
@@ -149,11 +131,47 @@ An example content of the ``admin.py`` is as follows:
         'breakfast_adminview',
     )
 
-The dictionary specifying given model view is required to contain keys
-``model`` and ``modelview``, which should point to class definitions of
-ORM Model and the corresponding ModelView class.
-The remaining keys are passed as keyword arguments to the
+It is important to define a dictionary for each Model-ModelView pair
+(see ``snack_adminview`` and ``breakfast_adminview`` above).
+The dictionary has to contain the keys ``model`` and ``modelview``,
+which should point to class definitions of ORM Model and its corresponding
+ModelView class. The remaining keys are passed as keyword arguments to the
 constructor of :class:`flask_admin.contrib.sqla.ModelView`.
+
+Registering the entry point
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The default way of adding admin views to the admin panel is though the
+setuptools entry point discovery. To do that, a newly created module has to
+register an entry point under the group ``invenio_admin.views`` inside its
+``setup.py`` as follows:
+
+.. code-block:: python
+
+    # invenio-diner/setup.py
+    setup(
+      entry_points={
+        'invenio_admin.views': [
+          'invenio_diner_snack = invenio_diner.admin.snack_adminview',
+          'invenio_diner_breakfast = invenio_diner.admin.breakfast_adminview',
+        ],
+      },
+    )
+
+
+Security and authentication check
+---------------------------------
+By default Invenio-Admin protects the admin views from un-authenticated users
+with Flask-Login and restricts access on a per-permission basis using
+Flask-Security. In order to login to a Invenio-Admin panel the user
+needs to be authenticated using Flask-Login and have a Flask-Principal
+identity which provides the ``ActionNeed('admin-access')``.
+
+If you do not plan on using the Flask-Security permission-based system,
+this behaviour is easy to override by providing a custom permission factory
+to the configuration variable `invenio_admin.config.ADMIN_PERMISSION_FACTORY`.
+(see :class:`invenio_admin.permissions.admin_permission_factory`)
+This factory should return a Permission-like object ``p``, which can grant
+access based on any condition, through its method ``p.can()``.
 """
 
 from __future__ import absolute_import, print_function

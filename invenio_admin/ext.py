@@ -60,7 +60,7 @@ class _AdminState(object):
         :param session: The session handler. If not specified, ``db.session``
             will be used. (Default: ``None``)
         """
-        view_class = self.view_class_factory(view_class)
+        protected_view_class = self.view_class_factory(view_class)
         session = kwargs.pop('session') if 'session' in kwargs else None
         # TODO: Backwards compatibility with old signature:
         # register_view(self, view_class, model_class, session=None, **kwargs)
@@ -72,9 +72,14 @@ class _AdminState(object):
         if args:
             model_class = args[0]
             self.admin.add_view(
-                view_class(model_class, session or db.session, **kwargs))
+                protected_view_class(model_class, session or db.session,
+                                     **kwargs))
         else:
-            self.admin.add_view(view_class(**kwargs))
+            # Base views take the endpoint name from the class name
+            # We have to overwrite it, because of the protected view class
+            if 'endpoint' not in kwargs:
+                kwargs['endpoint'] = view_class(**kwargs).endpoint
+            self.admin.add_view(protected_view_class(**kwargs))
 
     def load_entry_point_group(self, entry_point_group):
         """Load administration interface from entry point group."""

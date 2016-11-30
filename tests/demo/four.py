@@ -29,8 +29,10 @@ from flask_admin.base import BaseView, expose
 
 class Four(BaseView):
     """AdminModelView of the ModelOne."""
+
     @expose('/')
     def index(self):
+        """Index page."""
         return "Content of custom page Four"
 
 four = dict(view=Four,

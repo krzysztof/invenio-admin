@@ -88,10 +88,10 @@ def test_admin_view_authenticated(app):
         assert res.location.startswith('http://localhost/login')
 
         # Base view
-        res = client.get('/admin/myview/')
+        res = client.get('/admin/testbase/')
         assert res.status_code == 302
         assert res.location.startswith('http://localhost/login')
-        res = client.get('/admin/myview/foo/')
+        res = client.get('/admin/testbase/foo/')
         assert res.status_code == 302
         assert res.location.startswith('http://localhost/login')
 
@@ -108,9 +108,9 @@ def test_admin_view_authenticated(app):
         assert res.status_code == 200
 
         # Base view
-        res = client.get('/admin/myview/')
+        res = client.get('/admin/testbase/')
         assert res.status_code == 200
-        res = client.get('/admin/myview/foo/')
+        res = client.get('/admin/testbase/foo/')
         assert res.status_code == 200
 
     # User 2 is missing ActioNeed(admin-access) and thus can't access admin.
@@ -126,9 +126,9 @@ def test_admin_view_authenticated(app):
         assert res.status_code == 403
 
         # Base view
-        res = client.get('/admin/myview/')
+        res = client.get('/admin/testbase/')
         assert res.status_code == 403
-        res = client.get('/admin/myview/foo/')
+        res = client.get('/admin/testbase/foo/')
         assert res.status_code == 403
 
 
@@ -156,7 +156,7 @@ def test_custom_permissions(app, testmodelcls):
         assert res.status_code == 200
         res = client.get('/admin/testmodel/')
         assert res.status_code == 200
-        res = client.get('/admin/myview/')
+        res = client.get('/admin/testbase/')
         assert res.status_code == 200
         res = client.get('/admin/custommodel/')
         assert res.status_code == 403

@@ -70,12 +70,15 @@ class TestModelView(ModelView):
 
 class TestBase(BaseView):
     """Base AdminView."""
+
     @expose('/')
     def index(self):
+        """Index page."""
         return "HelloWorld"
 
     @expose('/foo/')
     def foo(self):
+        """Another page."""
         return "Foobar!"
 
 
@@ -141,7 +144,7 @@ def app(request):
     InvenioAdmin(
         app, permission_factory=lambda x: Permission(action_admin_access))
     app.extensions['invenio-admin'].register_view(TestModelView, TestModel)
-    app.extensions['invenio-admin'].register_view(TestBase, endpoint='myview')
+    app.extensions['invenio-admin'].register_view(TestBase)
 
     # Create database
     with app.app_context():

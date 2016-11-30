@@ -46,7 +46,7 @@ and Invenio-Admin extensions:
 >>> ext_db = InvenioDB(app)
 >>> ext_admin = InvenioAdmin(app)
 
-Let's now define a model and a model view:
+Let's now define a simple model with a model view, as well as simple base view:
 
 >>> from invenio_db import db
 >>> from flask_admin.contrib.sqla import ModelView
@@ -62,14 +62,14 @@ Let's now define a model and a model view:
 ...     can_edit = True
 ...
 >>> class MyBaseView(BaseView):
-... @expose('/')
+...     @expose('/')
 ...     def index(self):
 ...         return "HelloWorld!"
 
 and register them in the admin extension:
 
 >>> ext_admin.register_view(LunchModelView, Lunch)
->>> ext_admin.register_view(MyBaseView, endpoint='mybaseview')
+>>> ext_admin.register_view(MyBaseView)
 
 Finally, initialize the database and run the development server:
 
@@ -126,7 +126,7 @@ separate BaseView for statistics. The content of the file is as follows:
         def index(self):
             return "Welcome to the Invenio Diner Statistics page!"
 
-        @expose('/sales')
+        @expose('/sales/')
         def sales(self):
             return "You have served 0 dinners!"
 
@@ -144,7 +144,6 @@ separate BaseView for statistics. The content of the file is as follows:
 
     stats_adminview = {
         'view': DinerStats,
-        'endpoint': 'dinerstats',
         'name': 'Invenio Diner Stats',
     }
 
@@ -154,16 +153,23 @@ separate BaseView for statistics. The content of the file is as follows:
         'stats_adminview',
     )
 
-It is important to define a dictionary for each View and Model-ModelView pairs
-(see ``stats_adminview``, ``snack_adminview`` and ``breakfast_adminview``
-above). The dictionary has to contain the keys ``model`` and ``modelview``
-for the ModelView pages, which should point to class definitions of ORM Model
-and its corresponding ModelView class. Alternatively dictionary can specify a
-``view`` key, which should point to a custom BaseView class.
+.. note::
 
-The remaining keys are passed as keyword arguments to the
-constructors of :class:`flask_admin.contrib.sqla.ModelView` and
-:class:`flask_admin.base.BaseView`.
+    You have to define a dictionary for each BaseView and Model-ModelView pairs
+    (see ``stats_adminview``, ``snack_adminview`` and ``breakfast_adminview``
+    above).
+
+    For ModelViews, the dictionary has to contain the keys ``model`` and
+    ``modelview``, which should point to class definitions of ORM Model
+    and its corresponding ModelView class.
+
+    For BaseViews the dictionary should specify a ``view`` key, which should
+    point to a custom BaseView class.
+
+    All keys other than ``view``, ``model`` and ``modelview`` are passed as
+    keyword arguments to the constructors of
+    :class:`flask_admin.contrib.sqla.ModelView` and
+    :class:`flask_admin.base.BaseView`.
 
 Registering the entry point
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -189,17 +195,21 @@ register an entry point under the group ``invenio_admin.views`` inside its
 Security and authentication check
 ---------------------------------
 By default Invenio-Admin protects the admin views from un-authenticated users
-with Flask-Login and restricts access on a per-permission basis using
+with Flask-Login and restricts the access on a per-permission basis using
 Flask-Security. In order to login to a Invenio-Admin panel the user
-needs to be authenticated using Flask-Login and have a Flask-Principal
+needs to be authenticated using Flask-Login and have a Flask-Security
 identity which provides the ``ActionNeed('admin-access')``.
 
-If you do not plan on using the Flask-Security permission-based system,
-this behaviour is easy to override by providing a custom permission factory
-to the configuration variable `invenio_admin.config.ADMIN_PERMISSION_FACTORY`.
-(see :class:`invenio_admin.permissions.admin_permission_factory`)
-This factory should return a Permission-like object ``p``, which can grant
-access based on any condition, through its method ``p.can()``.
+.. note::
+
+    If you want to use a custom permission rule, you can easily set
+    provide your own permission factory in the configuration variable
+    :data:`invenio_admin.config.ADMIN_PERMISSION_FACTORY`.
+
+    For more information see the factory:
+    :func:`invenio_admin.permissions.admin_permission_factory`
+    and the view using it:
+    :func:`invenio_admin.views.protected_adminview_factory`
 """
 
 from __future__ import absolute_import, print_function

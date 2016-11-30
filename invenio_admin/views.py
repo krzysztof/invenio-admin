@@ -36,11 +36,13 @@ current_admin = LocalProxy(lambda: current_app.extensions['invenio-admin'])
 def protected_adminview_factory(base_class):
     """Factory for creating protected admin view classes.
 
-    The factory will create a new class using the provided class as base class
-    and overwriting ``is_accessible()`` and ``inaccessible_callback()``
-    methods.
+    The factory will create a new AdminView class using the provided class in
+    the argument as a base class and overwrite the ``is_accessible()``
+    and ``inaccessible_callback()`` methods so that only user with
+    ``'admin-access'`` permission can access them.
 
     :param base_class: Class to use as base class.
+    :type base_class: :class:`flask_admin.base.BaseView`
     :returns: Admin view class which provides authentication and authorization.
     """
     class ProtectedAdminView(base_class):

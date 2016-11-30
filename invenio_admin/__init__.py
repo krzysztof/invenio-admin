@@ -37,7 +37,7 @@ Create a basic Flask application.
 >>> from flask import Flask
 >>> app = Flask('DinerApp')
 
-Invenio-DB is the only Invenio dependency which needs to be instantiated:
+Invenio-Admin requires Invenio-DB to instantiate the admin model views:
 
 >>> from invenio_db import InvenioDB
 >>> from invenio_admin import InvenioAdmin
@@ -82,14 +82,14 @@ Built-In security and authentication check
 ------------------------------------------
 Although Invenio-Admin does not directly depend on Invenio-Access or
 Invenio-Accounts module, it does protect the admin views with Flask-Login and
-Flask-Principal features. In order to login to a Invenio-Admin panel the user
+Flask-Principal. In order to login to a Invenio-Admin panel the user
 needs to be authenticated using Flask-Login and have a Flask-Principal
 identity which provides the ``ActionNeed('admin-access')``.
 
-AdminView discovery through setuptools' entry points
-----------------------------------------------------
-The default way of adding model views to admin panel in Invenio is though the
-EntryPoint discovery. To do that, a newly created module has to register an
+AdminView discovery through entry points
+----------------------------------------
+The default way of adding admin views to the admin panel is though the
+entry point discovery. To do that, a newly created module has to register an
 entry point under the group ``invenio_admin.views`` inside its ``setup.py``
 as follows:
 
@@ -108,16 +108,16 @@ as follows:
 
 The example above will add two model views to Invenio-Admin instance, namely
 the description of ``Snack`` and ``Breakfast`` models.
-Definitions of model views are usually defined inside a file
-``invenio-diner/invenio_diner/admin.py``:
+Definitions of admin views are usually defined in a top-level ``admin.py``
+file insie the invenio module, e.g.:
 
-A typical example of the admin view definition is as follows:
+``invenio-diner/invenio_diner/admin.py``.
+
+An example content of the ``admin.py`` is as follows:
 
 .. code-block:: python
 
-    # admin.py
     from flask_admin.contrib.sqla import ModelView
-    from flask_babelex import gettext as _
     from .models import Snack, Breakfast
 
     class SnackModelView(ModelView):
@@ -137,6 +137,7 @@ A typical example of the admin view definition is as follows:
         'modelview': SnackModelView,
         'category': 'Diner',
     }
+
     breakfast_adminview = {
         'model':Breakfast,
         'modelview': BreakfastModelView,
@@ -148,10 +149,11 @@ A typical example of the admin view definition is as follows:
         'breakfast_adminview',
     )
 
-The dictionary specifying given admin view is required to contain keys
+The dictionary specifying given model view is required to contain keys
 ``model`` and ``modelview``, which should point to class definitions of
-database Model and admin ModelView. The remaining keys are passed as keyword
-arguments to the constructor of :class:`flask_admin.contrib.sqla.ModelView`.
+ORM Model and the corresponding ModelView class.
+The remaining keys are passed as keyword arguments to the
+constructor of :class:`flask_admin.contrib.sqla.ModelView`.
 """
 
 from __future__ import absolute_import, print_function

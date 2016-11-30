@@ -52,7 +52,7 @@ class _AdminState(object):
         self.permission_factory = permission_factory
         self.view_class_factory = view_class_factory
 
-    def register_view(self, view_class, model_class, session=None, **kwargs):
+    def register_view(self, view_class, *args, **kwargs):
         """Register an admin view on this admin instance.
 
         :param view_class: The view class name passed to the view factory.
@@ -61,22 +61,37 @@ class _AdminState(object):
             will be used. (Default: ``None``)
         """
         view_class = self.view_class_factory(view_class)
-        self.admin.add_view(
-            view_class(model_class, session or db.session, **kwargs))
+        session = kwargs.pop('session') if 'session' in kwargs else None
+        # TODO: Backwards compatibility with old signature:
+        # register_view(self, view_class, model_class, session=None, **kwargs)
+        # We assume that there can be only one extra positional argument,
+        # at which point we register the ModelView, otherwise we register a
+        # custom admin view.
+        assert len(args) <= 1, \
+            "Method accepts either one or two positional arguments"
+        if args:
+            model_class = args[0]
+            self.admin.add_view(
+                view_class(model_class, session or db.session, **kwargs))
+        else:
+            self.admin.add_view(view_class(**kwargs))
 
     def load_entry_point_group(self, entry_point_group):
         """Load administration interface from entry point group."""
         for ep in pkg_resources.iter_entry_points(group=entry_point_group):
-            admin_ep = dict(ep.load())
-            assert 'model' in admin_ep, \
-                "Admin's entrypoint dictionary must define the 'model'"
-            assert 'modelview' in admin_ep, \
-                "Admin's entrypoint dictionary must define the 'modelview'"
 
-            self.register_view(
-                admin_ep.pop('modelview'),
-                admin_ep.pop('model'),
-                **admin_ep)
+            admin_ep = dict(ep.load())
+            m, mv, v = (k in admin_ep for k in ('model', 'modelview', 'view'))
+            assert (m and mv and not v) or (not m and not mv and v), \
+                "Admin entrypoint dictionary must contain either " \
+                "'view' OR 'model' and 'modelview' keys."
+
+            if m and mv:
+                self.register_view(admin_ep.pop('modelview'),
+                                   admin_ep.pop('model'),
+                                   **admin_ep)
+            else:  # v
+                self.register_view(admin_ep.pop('view'), **admin_ep)
 
 
 class InvenioAdmin(object):
@@ -125,6 +140,7 @@ class InvenioAdmin(object):
             import_string(default_permission_factory)
 
         # Create administration app.
+
         admin = Admin(
             app,
             name=app.config['ADMIN_APPNAME'],

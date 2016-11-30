@@ -50,6 +50,7 @@ Let's now define a model and a model view:
 
 >>> from invenio_db import db
 >>> from flask_admin.contrib.sqla import ModelView
+>>> from flask_admin.base import BaseView, expose
 >>> class Lunch(db.Model):
 ...     __tablename__ = 'diner_lunch'
 ...     id = db.Column(db.Integer, primary_key=True)
@@ -60,10 +61,15 @@ Let's now define a model and a model view:
 ...     can_create = True
 ...     can_edit = True
 ...
+>>> class MyBaseView(BaseView):
+... @expose('/')
+...     def index(self):
+...         return "HelloWorld!"
 
 and register them in the admin extension:
 
 >>> ext_admin.register_view(LunchModelView, Lunch)
+>>> ext_admin.register_view(MyBaseView, endpoint='mybaseview')
 
 Finally, initialize the database and run the development server:
 
@@ -86,15 +92,16 @@ your custom models from within the Invenio module or an Invenio overlay
 application. Instead of registering it directly on the application as in the
 example above, you can use entry points to register those automatically.
 
-Defining models and model views
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Defining admin views
+~~~~~~~~~~~~~~~~~~~~
 Let us start with defining the ``admin.py`` file inside your module or overlay,
 which will contain all admin-related classes and functions.
 For example, assuming a ``Invenio-Diner`` module, the file could reside in:
 
 ``invenio-diner/invenio_diner/admin.py``.
 
-An the content of which would look as follows:
+In this example we will define two ModelViews for two ORM models and one
+separate BaseView for statistics. The content of the file is as follows:
 
 .. code-block:: python
 
@@ -114,29 +121,49 @@ An the content of which would look as follows:
         can_view_details = True
         column_searchable_list = ('toast', 'eggs', 'bacon' )
 
+    class DinerStats(BaseView):
+        @expose('/')
+        def index(self):
+            return "Welcome to the Invenio Diner Statistics page!"
+
+        @expose('/sales')
+        def sales(self):
+            return "You have served 0 dinners!"
+
     snack_adminview = {
-        'model':Snack,
+        'model': Snack,
         'modelview': SnackModelView,
         'category': 'Diner',
     }
 
     breakfast_adminview = {
-        'model':Breakfast,
+        'model': Breakfast,
         'modelview': BreakfastModelView,
         'category': 'Diner',
+    }
+
+    stats_adminview = {
+        'view': DinerStats,
+        'endpoint': 'dinerstats',
+        'name': 'Invenio Diner Stats',
     }
 
     __all__ = (
         'snack_adminview',
         'breakfast_adminview',
+        'stats_adminview',
     )
 
-It is important to define a dictionary for each Model-ModelView pair
-(see ``snack_adminview`` and ``breakfast_adminview`` above).
-The dictionary has to contain the keys ``model`` and ``modelview``,
-which should point to class definitions of ORM Model and its corresponding
-ModelView class. The remaining keys are passed as keyword arguments to the
-constructor of :class:`flask_admin.contrib.sqla.ModelView`.
+It is important to define a dictionary for each View and Model-ModelView pairs
+(see ``stats_adminview``, ``snack_adminview`` and ``breakfast_adminview``
+above). The dictionary has to contain the keys ``model`` and ``modelview``
+for the ModelView pages, which should point to class definitions of ORM Model
+and its corresponding ModelView class. Alternatively dictionary can specify a
+``view`` key, which should point to a custom BaseView class.
+
+The remaining keys are passed as keyword arguments to the
+constructors of :class:`flask_admin.contrib.sqla.ModelView` and
+:class:`flask_admin.base.BaseView`.
 
 Registering the entry point
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -153,6 +180,7 @@ register an entry point under the group ``invenio_admin.views`` inside its
         'invenio_admin.views': [
           'invenio_diner_snack = invenio_diner.admin.snack_adminview',
           'invenio_diner_breakfast = invenio_diner.admin.breakfast_adminview',
+          'invenio_diner_stats = invenio_diner.admin.stats_adminview',
         ],
       },
     )
